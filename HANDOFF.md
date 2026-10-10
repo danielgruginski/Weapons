@@ -38,6 +38,11 @@ versions"): `wpn_shields.py`, ten models on their own atlas (README "Shields"); 
 The heraldry is one design per model; the game's creatures hold a strapped shield edge on in their combat idle
 (POLISH.md).
 
+2026-10-10: **orc-made** (Daniel: "go ahead with the orc weapons and the horn"): `wpn_orcs.py`, five plain models
+(README "The roster"), rebaked and installed; four items (levels 8-10) carried and dropped by the orcs, and the war
+horn held by the horn-blower, which lifts it to its lips in code (MedievalSetting `PlayerModel.HeldAtMouth`). A
+rebuild now makes 60 models; `wpn_build.reload` reloads `wpn_orcs` before the roster.
+
 Done: 35 models, 20 enchanted copies, atlas + glow + metallic/smoothness, Unity setup and showcase, 54 items in the
 game (stats, prices, shops, loot, enchant effects, armour piercing), crossbow clips, glow checked in play mode.
 
@@ -49,6 +54,8 @@ game (stats, prices, shops, loot, enchant effects, armour piercing), crossbow cl
 - Goblins could carry the iron weapons (`GoblinAppearance` slots take any prop prefab: the kit is in their socket frame,
   but human-sized: scale ~0.6).
 - The flamberge is heavy (2,640 triangles): fewer rows in its waves if budget matters.
+- The war horn's mouthpiece end (prop -Y, 15.5 cm below the fist) is what the game puts at the lips: move it and change
+  `PlayerModel.PlaceHeld` with it.
 
 ## Checks
 

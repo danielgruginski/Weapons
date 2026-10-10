@@ -16,7 +16,8 @@ SHARP = math.radians(75)                   # blade edges and box corners; 5- to 
 
 
 def reload():
-    for m in (wpn_common, wpn_mats, wpn_parts, wpn_roster):
+    import wpn_orcs
+    for m in (wpn_common, wpn_mats, wpn_parts, wpn_orcs, wpn_roster):     # wpn_orcs before the roster that lists it
         importlib.reload(m)
 
 

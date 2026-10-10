@@ -1,7 +1,8 @@
 # Weapons
 
-A parametric weapon kit for the RPG (MedievalSetting): 35 models built from code in Blender, 20 of them also in an
-enchanted copy whose runes, edges and stones glow, all on one painted atlas; and ten shields (five plain, four
+A parametric weapon kit for the RPG (MedievalSetting): 40 models built from code in Blender (five of them orc-made:
+four crude weapons and a war horn), 20 also in an enchanted copy whose runes, edges and stones glow, all on one painted
+atlas; and ten shields (five plain, four
 enchanted copies and Sunguard) on an atlas of their own. Human-sized, modelled in the goblins'
 hand-socket frame, so a goblin can hold them as they are and a human with the game's standard turn.
 
@@ -35,6 +36,7 @@ bake, so one pass can be baked again without a rebuild.
 | `wpn_mats.py` | painted source materials (`PALETTE`: colours, wear, glow, metallic, smoothness), the rune glyph strip, the three bake passes |
 | `wpn_parts.py` | parts: blades with real sections (bevelled edges, fullers, midribs, single edge, curve, belly, flamberge waves), guards, grips, pommels, hafts, langets, flanges, spikes, hammer blocks, crystals, rune inlays |
 | `wpn_roster.py` | one builder per model and the `WEAPONS` list (name, builder, hand, mode) |
+| `wpn_orcs.py` | the orc-made models and the war horn (`ORC_WEAPONS`, appended to `WEAPONS` by the roster) |
 | `wpn_build.py` | builds every model, finishes the meshes (sharp edges over 75 degrees), lays out the catalog |
 | `wpn_bake.py` | packs one atlas and bakes colour, glow and metallic/smoothness |
 | `wpn_export.py` | one FBX per model (one material, one submesh) and the manifest |
@@ -55,12 +57,22 @@ bake, so one pass can be baked again without a rebuild.
 | Named (enchanted only) | | | | Sunwarden (mace), Stormcaller (staff), Thornwood (bow) |
 | Missiles | Arrow, Bolt | | | |
 
+**Orc-made** (2026-10-10, `wpn_orcs.py`, plain only): **OrcCleaver** (a broad single-edged slab squared at the end, a
+toothed spine, a bar guard, an iron ball pommel), **OrcAxe** (a moon-shaped head with a long lower horn, a hooked back
+spike, cord bindings), **SpikedClub** (a dark club swelling to an iron-banded head driven through with nails),
+**OrcWarAxe** (two hands: a double bit, a top spike, a bone ring above the grip) and the **WarHorn** (a curved horn,
+iron bands, a brass mouthpiece and bell rim; a LEFT-hand prop with the mouthpiece just below the fist and the bell up
+and out -- the game's horn-blower carries it and lifts it to its lips). Rust-pitted iron hammered thick, rough hafts.
+816 / 928 / 870 / 1,318 / 1,244 triangles.
+
+![The orc-made models](docs/images/orc_weapons.png)
+
 Iron is dark and pitted with rust, plain guards; steel is bright with long fullers, curved guards, wire-bound grips;
 fine adds gilt or silver fittings, coloured grips and stones. An enchanted copy is the same model plus rune inlays (in
 the fuller, along an axe's bit, round a shaft, down a bow's back) and crystals in place of the stones.
 
 Triangles: 112 (arrow) to 1,000-1,800 for most models; the flamberge is the heaviest at 2,640 (3,030 enchanted).
-67,684 for all 55. Textures: `T_Weapons` 2048² (colour), `T_Weapons_Glow` 2048² (the glow mask), `T_Weapons_MS` 2048²
+72,860 for all 60. Textures: `T_Weapons` 2048² (colour), `T_Weapons_Glow` 2048² (the glow mask), `T_Weapons_MS` 2048²
 (metallic R, smoothness A).
 
 ## Shields
@@ -160,7 +172,8 @@ Gotchas met:
 
 ## In the game
 
-MedievalSetting's `Game > Items > Create Default Items` makes the 54 items from these prefabs (see its
+MedievalSetting's `Game > Items > Create Default Items` makes the 58 weapon items from these prefabs (and the war horn
+a loot item whose `heldModel` is `Wpn_WarHorn`) (see its
 `Assets/Game/README.md`: tiers, prices, enchantments, where each is sold or found). Crossbows have their own clips,
 authored on the goblin rig in the Goblins pipeline (`src/gob_crossbow.py`, `Goblin@Crossbow_Ready` / `_Shoot`).
 

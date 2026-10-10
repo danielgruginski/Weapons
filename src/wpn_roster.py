@@ -680,3 +680,7 @@ WEAPONS = [
     ("Arrow", arrow, 'M', 'plain'),
     ("Bolt", bolt, 'M', 'plain'),
 ]
+
+
+from wpn_orcs import ORC_WEAPONS                         # noqa: E402  (2026-10-10: the orcs' crude weapons and the war horn)
+WEAPONS += ORC_WEAPONS
