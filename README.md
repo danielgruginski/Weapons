@@ -1,7 +1,8 @@
 # Weapons
 
 A parametric weapon kit for the RPG (MedievalSetting): 35 models built from code in Blender, 20 of them also in an
-enchanted copy whose runes, edges and stones glow, all on one painted atlas. Human-sized, modelled in the goblins'
+enchanted copy whose runes, edges and stones glow, all on one painted atlas; and ten shields (five plain, four
+enchanted copies and Sunguard) on an atlas of their own. Human-sized, modelled in the goblins'
 hand-socket frame, so a goblin can hold them as they are and a human with the game's standard turn.
 
 ![One-handed weapons in Unity, plain and enchanted](docs/images/showcase_onehand.png)
@@ -62,6 +63,45 @@ Triangles: 112 (arrow) to 1,000-1,800 for most models; the flamberge is the heav
 67,684 for all 55. Textures: `T_Weapons` 2048² (colour), `T_Weapons_Glow` 2048² (the glow mask), `T_Weapons_MS` 2048²
 (metallic R, smoothness A).
 
+## Shields
+
+`src/wpn_shields.py` (built like the weapons, baked to `T_Shields`, `T_Shields_Glow`, `T_Shields_MS`: their big
+painted faces would starve the weapons' atlas):
+
+```python
+import wpn_shields, wpn_bake, wpn_export
+wpn_shields.build_all()                                           # WPN_Shields: Shd_<Name>, Shd_<Name>_Rune; a catalog row
+wpn_bake.bake_all(kit="shields", passes=("color",))               # then ("glow",) and ("ms",) with pack_uvs=False
+wpn_export.export_all(kit="shields")                              # export/Models/Shd_*.fbx, export/shields.json
+```
+
+| | Shape | Face | Enchanted copy |
+|---|---|---|---|
+| Buckler | 34 cm dished iron disc, big boss, raised ring | iron | |
+| Heater | flat top, straight sides, arcs to a point; steel rim | blue, white chevron | Heater_Rune |
+| Kite | round crown, long taper; steel rim and boss | red, ochre cross | Kite_Rune |
+| Tower | 104 x 56 cm, strongly curved; iron rim, two iron bands, boss | oak planks, green pale | Tower_Rune (runes on the bands) |
+| KnightShield | heater, gilt rim and studs | quartered blue and gold | KnightShield_Rune |
+| Sunguard | round, bright steel, gilt sun in relief, crystal heart | | enchanted only |
+
+An enchanted copy adds a ring of runes inside the rim and a crystal in a metal collar. Triangles: 1,500-2,800.
+
+![The shields in Unity, plain and enchanted](docs/images/showcase_shields.png)
+![Held in the shield guard](docs/images/shields_guard.png)
+
+- **Frame** (Humans `Socket_Shield`, in Blender's axes): origin where the forearm crosses the shield's back, +Y out
+  of the face, Z along the forearm (+Z toward the hand), X up the shield. Unity mirrors X: the face is +Y, the top
+  -X. The game turns the prop half a turn about its face (top up in the shield guard, the forearm across the chest)
+  and keeps a long shield hanging top up from there (MedievalSetting `PlayerModel.KeepShieldUpright`).
+- **Shape**: an outline in (u up, v across) from segments (corners kept), the back curved `w = -ku (u - uc)^2 - kv v^2`,
+  the face a board's thickness out; parts follow the face (`rim_tube`, `band`, `rune_ring`, `stone`, `dome_part`: a
+  boss's or a crystal's hidden half pressed flat inside the board, so nothing shows through the back), and two leather
+  enarmes loop round the forearm at the back.
+- **Painted faces** are materials (`wpn_mats.HERALDRY`): a field and a charge from the palette laid out by a design
+  (chevron, cross, quarterly, pale, bend) in the shield's own frame, the paint chipped through to `under`.
+- The bake's ambient occlusion sees only the object itself (`only_local`): every model sits at the origin for the
+  bake, and neighbours left ghost marks on the shields' faces.
+
 ## Socket frame
 
 Every model is built in socket space, the goblins' convention (see Goblins/README): origin where the fist closes,
@@ -97,9 +137,9 @@ then **Tools > Weapons > Rebuild Prefabs and Showcase** (or *Rebuild Prefabs Onl
 
 | `Assets/Weapons/...` | |
 |---|---|
-| `Models/` | `Wpn_*.fbx` (Read/Write, no materials, normals as exported: `WeaponsPostprocessor`), `weapons.json` |
-| `Textures/`, `Materials/` | the three maps; `M_Weapons` (URP Lit), `M_Weapons_Rune` (the same with the glow map as emission), `M_Weapons_Spark` (additive particles) |
-| `Prefabs/Wpn_*` | mesh + material + `WeaponProp` (hand, string tips, bolt rest, length, triangles); enchanted ones also `WeaponGlow` |
+| `Models/` | `Wpn_*.fbx`, `Shd_*.fbx` (Read/Write, no materials, normals as exported: `WeaponsPostprocessor`), `weapons.json`, `shields.json` |
+| `Textures/`, `Materials/` | the maps; `M_Weapons` (URP Lit), `M_Weapons_Rune` (the same with the glow map as emission), `M_Shields` and `M_Shields_Rune` (the shields' atlas), `M_Weapons_Spark` (additive particles) |
+| `Prefabs/Wpn_*`, `Shd_*` | mesh + material + `WeaponProp` (hand: R, L, M or S for a shield; string tips, bolt rest, length, triangles); enchanted ones also `WeaponGlow` |
 | `Scenes/Weapons_Showcase` | every prefab in rows, the enchanted ones cycling the elements; renders to `Logs/WeaponsSetup` |
 
 `WeaponGlow` (runtime): the runes and edges glow and breathe in the element's colour (`MaterialPropertyBlock` on

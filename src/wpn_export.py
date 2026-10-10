@@ -1,6 +1,7 @@
 """FBX export for Unity:
 
-    import wpn_export; wpn_export.export_all()
+    import wpn_export; wpn_export.export_all()            # the weapons
+    wpn_export.export_all(kit="shields")                  # the shields: Shd_*.fbx, T_Shields*, shields.json
 
 export/Models/Wpn_<Name>.fbx    each weapon alone, in socket space (parent it under the hand socket, identity pose;
                                 the game turns goblin-frame props into the Humans sockets with its own rotation)
@@ -11,9 +12,11 @@ export/weapons.json             per weapon: hand, triangles, bounds, and the poi
 import bpy, os, json, shutil
 from mathutils import Vector
 from wpn_common import ROOT
-import wpn_roster
+import wpn_roster, wpn_shields
 
 EXPORT = os.path.join(ROOT, "export")
+# collection, texture prefix, manifest (its list is named after the kit)
+KITS = {"weapons": ("WPN_Export", "T_Weapons", "weapons.json"), "shields": ("WPN_Shields", "T_Shields", "shields.json")}
 FBX = dict(apply_scale_options='FBX_SCALE_ALL', axis_forward='-Z', axis_up='Y', use_armature_deform_only=True,
            add_leaf_bones=False, primary_bone_axis='Y', secondary_bone_axis='X', bake_anim=False,
            mesh_smooth_type='FACE', use_mesh_modifiers=True, use_custom_props=True, path_mode='STRIP',
@@ -25,14 +28,16 @@ def _unity(p):
     return [-p[0], p[1], p[2]]
 
 
-def export_all():
+def export_all(kit="weapons"):
+    coll_name, tex, manifest_file = KITS[kit]
     os.makedirs(os.path.join(EXPORT, "Models"), exist_ok=True)
     os.makedirs(os.path.join(EXPORT, "Textures"), exist_ok=True)
-    exp = bpy.data.collections["WPN_Export"]
+    exp = bpy.data.collections[coll_name]
     exp.hide_viewport = False
     vl = bpy.context.view_layer
     objs = sorted(exp.objects, key=lambda o: o.name)
     rune_only = {"Wpn_" + n for n, _, _, mode in wpn_roster.WEAPONS if mode == 'rune'}
+    rune_only |= {"Shd_" + n for n, _, mode in wpn_shields.SHIELDS if mode == 'rune'}
     manifest = {}
     gm = bpy.data.materials.get("M_Weapons") or bpy.data.materials.new("M_Weapons")
     coll = bpy.context.scene.collection
@@ -70,10 +75,10 @@ def export_all():
                 e[k] = _unity(tuple(o[k]))
         manifest[o.name] = e
     for fn in os.listdir(os.path.join(ROOT, "textures")):
-        if fn.startswith("T_Weapons") and fn.endswith(".png"):
+        if fn.startswith(tex) and fn.endswith(".png"):
             shutil.copy2(os.path.join(ROOT, "textures", fn), os.path.join(EXPORT, "Textures", fn))
-    with open(os.path.join(EXPORT, "weapons.json"), "w", encoding="utf-8") as f:
-        json.dump({"weapons": [dict(name=k, **v) for k, v in manifest.items()]}, f, indent=1)
+    with open(os.path.join(EXPORT, manifest_file), "w", encoding="utf-8") as f:
+        json.dump({kit: [dict(name=k, **v) for k, v in manifest.items()]}, f, indent=1)
     for s in bpy.context.selected_objects:
         s.select_set(False)
     exp.hide_viewport = True

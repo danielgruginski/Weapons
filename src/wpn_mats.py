@@ -63,6 +63,24 @@ PALETTE = {
     'crystal':     ('#7d97a8', '#e8f6ff', (60, 60, 60), None, 1.8, None, 1, 0.0, 0.92),
     # the inlay that carries an enchanted weapon's runes (engraved steel; the glyphs glow in the magic material)
     'rune':        ('#2d3036', '#41454d', (40, 40, 40), None, 0.4, None, 'rune', 0.25, 0.42),
+    # shields: boards with the grain up the shield (object X) and plank seams across it, and the paints of their faces
+    'wood_plank':  ('#523722', '#87603b', (3, 45, 45), ('#3a2616', 6, 0.64), 0.6, ('Z', 2.9), 0, 0.0, 0.3),
+    'paint_blue':  ('#233c66', '#2c4a7c', (45, 45, 45), ('#1a2c4c', 5, 0.7), 0.7, None, 0, 0.0, 0.34),
+    'paint_red':   ('#6e1c15', '#86271d', (45, 45, 45), ('#4e130e', 5, 0.7), 0.7, None, 0, 0.0, 0.34),
+    'paint_white': ('#c2bba8', '#d8d1be', (45, 45, 45), ('#9a9382', 5, 0.72), 0.5, None, 0, 0.0, 0.32),
+    'paint_ochre': ('#a77d27', '#c1952f', (45, 45, 45), ('#7c5a18', 5, 0.72), 0.6, None, 0, 0.0, 0.36),
+    'paint_green': ('#25452b', '#2e5534', (45, 45, 45), ('#1a321f', 5, 0.7), 0.7, None, 0, 0.0, 0.34),
+}
+
+# Painted shield faces: a field and a charge (two PALETTE colours) laid out by a design in the shield's own frame
+# (wpn_shields: object X up the shield, Z across it toward the hand), the paint chipped through to `under` here and
+# there. design: ('chevron', apex u, slope, width) | ('cross', u of the bar, width) | ('quarterly', u of the line) |
+# ('pale', width) | ('bend', offset, angle in degrees, width) | None (the field alone)
+HERALDRY = {
+    'her_heater': dict(field='paint_blue', charge='paint_white', design=('chevron', 0.07, 0.95, 0.085), under='wood_plank'),
+    'her_kite':   dict(field='paint_red', charge='paint_ochre', design=('cross', 0.06, 0.075), under='wood_plank'),
+    'her_knight': dict(field='paint_blue', charge='paint_ochre', design=('quarterly', 0.0), under='leather'),
+    'her_tower':  dict(field='wood_plank', charge='paint_green', design=('pale', 0.16), under='wood_plank', chips=0.62),
 }
 
 
@@ -132,6 +150,9 @@ def paint_group():
     """AO x top light + worn-edge highlight over a base colour (the goblins' painted look)."""
     g = bpy.data.node_groups.get("WPN_PaintLight")
     if g is not None:
+        for n in g.nodes:                                # (older files: occlusion from every object)
+            if n.type == 'AMBIENT_OCCLUSION':
+                n.only_local = True
         return g
     g = bpy.data.node_groups.new("WPN_PaintLight", 'ShaderNodeTree')
     g.interface.new_socket("Color", in_out='INPUT', socket_type='NodeSocketColor')
@@ -141,6 +162,7 @@ def paint_group():
     gi, go = N.new('NodeGroupInput'), N.new('NodeGroupOutput')
     ao = N.new('ShaderNodeAmbientOcclusion')
     ao.samples = 12
+    ao.only_local = True                                 # the bake stacks every model at the origin: see only its own
     ao.inputs['Distance'].default_value = 0.03
     bev = N.new('ShaderNodeBevel')
     bev.samples = 8
@@ -189,6 +211,13 @@ def paint_group():
 
 def _material(name, spec):
     dark, light, scale, stain, edge, stripes, glow, metal, smooth = spec
+    m, N, L, tc = _new_material(name)
+    col = _colour(N, L, tc, spec)
+    _finish(m, N, L, col, glow, edge, metal, smooth, light)
+    return m
+
+
+def _new_material(name):
     m = bpy.data.materials.get("WS_" + name) or bpy.data.materials.new("WS_" + name)
     m.use_nodes = True
     nt = m.node_tree
@@ -199,6 +228,12 @@ def _material(name, spec):
     em.name = "EMIT"
     L.new(em.outputs['Emission'], out.inputs['Surface'])
     tc = N.new('ShaderNodeTexCoord')
+    return m, N, L, tc
+
+
+def _colour(N, L, tc, spec):
+    """A palette entry's painted colour (two-tone noise, stripes, stains, the metals' bright sides): its socket."""
+    dark, light, scale, stain, edge, stripes, glow, metal, smooth = spec
     mp = N.new('ShaderNodeMapping')
     mp.inputs['Scale'].default_value = scale
     L.new(tc.outputs['Object'], mp.inputs['Vector'])
@@ -262,6 +297,11 @@ def _material(name, spec):
         L.new(sh.outputs['Result'], mx.inputs['Factor'])
         L.new(col, mx.inputs['A'])
         col = mx.outputs['Result']
+    return col
+
+
+def _finish(m, N, L, col, glow, edge, metal, smooth, light):
+    """The pass outputs (colour through the paint light, glow, metallic/smoothness) of a source material."""
     glow_out = None
     if glow == 'rune':                                   # the glyphs, through the inlay's own UV layer
         uvn = N.new('ShaderNodeUVMap')
@@ -326,6 +366,89 @@ def _material(name, spec):
     m["wpn_glow"] = str(glow)
     m["wpn_ms"] = (metal, smooth)
     m.diffuse_color = _hex(light)
+
+
+def _math(N, L, op, a, b=None):
+    n = N.new('ShaderNodeMath')
+    n.operation = op
+    for i, x in enumerate((a, b)):
+        if x is None:
+            continue
+        if isinstance(x, (int, float)):
+            n.inputs[i].default_value = x
+        else:
+            L.new(x, n.inputs[i])
+    return n.outputs[0]
+
+
+def _band(N, L, d, half, e=0.0015):
+    """1 where |d| < half, with a soft edge e either side."""
+    mr = N.new('ShaderNodeMapRange')
+    mr.clamp = True
+    mr.inputs['From Min'].default_value = half - e
+    mr.inputs['From Max'].default_value = half + e
+    mr.inputs['To Min'].default_value = 1.0
+    mr.inputs['To Max'].default_value = 0.0
+    L.new(_math(N, L, 'ABSOLUTE', d), mr.inputs['Value'])
+    return mr.outputs['Result']
+
+
+def _design(N, L, tc, design):
+    """The charge's mask (1 = charge) of a heraldic design, from the object's X (up the shield) and Z (across)."""
+    sep = N.new('ShaderNodeSeparateXYZ')
+    L.new(tc.outputs['Object'], sep.inputs[0])
+    u, v = sep.outputs['X'], sep.outputs['Z']
+    kind = design[0]
+    if kind == 'chevron':                                # a band with its apex up the middle, its arms down the sides
+        _, c, slope, w = design
+        line = _math(N, L, 'ADD', _math(N, L, 'MULTIPLY', _math(N, L, 'ABSOLUTE', v), -slope), c)
+        return _band(N, L, _math(N, L, 'SUBTRACT', u, line), w / 2)
+    if kind == 'cross':
+        _, uc, w = design
+        return _math(N, L, 'MAXIMUM', _band(N, L, v, w / 2), _band(N, L, _math(N, L, 'SUBTRACT', u, uc), w / 2))
+    if kind == 'quarterly':
+        _, uc = design
+        return _math(N, L, 'GREATER_THAN', _math(N, L, 'MULTIPLY', _math(N, L, 'SUBTRACT', u, uc), v), 0.0)
+    if kind == 'pale':
+        return _band(N, L, v, design[1] / 2)
+    if kind == 'bend':
+        _, c, ang, w = design
+        a = math.radians(ang)
+        d = _math(N, L, 'ADD', _math(N, L, 'MULTIPLY', u, math.cos(a)), _math(N, L, 'MULTIPLY', v, math.sin(a)))
+        return _band(N, L, _math(N, L, 'SUBTRACT', d, c), w / 2)
+    raise ValueError(kind)
+
+
+def _heraldic(name, spec):
+    """A painted shield face (HERALDRY): the field, the charge over it by the design, chips through to `under`."""
+    m, N, L, tc = _new_material(name)
+    field = PALETTE[spec['field']]
+    col = _colour(N, L, tc, field)
+    if spec.get('design'):
+        mx = N.new('ShaderNodeMix')
+        mx.data_type = 'RGBA'
+        L.new(_design(N, L, tc, spec['design']), mx.inputs['Factor'])
+        L.new(col, mx.inputs['A'])
+        L.new(_colour(N, L, tc, PALETTE[spec['charge']]), mx.inputs['B'])
+        col = mx.outputs['Result']
+    if spec.get('under'):                                # chips where the paint has flaked off
+        nz = N.new('ShaderNodeTexNoise')
+        nz.inputs['Scale'].default_value = 24.0
+        nz.inputs['Detail'].default_value = 6
+        nz.inputs['Roughness'].default_value = 0.65
+        L.new(tc.outputs['Object'], nz.inputs['Vector'])
+        th = spec.get('chips', 0.7)
+        mr = N.new('ShaderNodeMapRange')
+        mr.inputs['From Min'].default_value = th
+        mr.inputs['From Max'].default_value = th + 0.015
+        L.new(nz.outputs['Fac'], mr.inputs['Value'])
+        mx = N.new('ShaderNodeMix')
+        mx.data_type = 'RGBA'
+        L.new(mr.outputs['Result'], mx.inputs['Factor'])
+        L.new(col, mx.inputs['A'])
+        L.new(_colour(N, L, tc, PALETTE[spec['under']]), mx.inputs['B'])
+        col = mx.outputs['Result']
+    _finish(m, N, L, col, 0, field[4], 0.0, field[8], field[1])
     return m
 
 
@@ -339,7 +462,9 @@ def _route(m, pas):
 
 
 def build_materials():
-    return {k: _material(k, v) for k, v in PALETTE.items()}
+    mats = {k: _material(k, v) for k, v in PALETTE.items()}
+    mats.update({k: _heraldic(k, v) for k, v in HERALDRY.items()})
+    return mats
 
 
 def set_pass(pas):

@@ -86,6 +86,8 @@ def catalog(scn, dx=0.32, row_gap=1.9, per_row=16):
     """Linked copies of every weapon stood upright (+Y socket = up), mundane and enchanted side by side, labelled."""
     cat = get_coll("WPN_Catalog", scene=scn)
     for o in list(cat.objects):
+        if o.name.startswith(("CAT_Shd_", "LBL_Shd_")):     # the shields' row is wpn_shields.catalog's
+            continue
         data = o.data
         bpy.data.objects.remove(o, do_unlink=True)
         if isinstance(data, bpy.types.Curve) and data.users == 0:

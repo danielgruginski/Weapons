@@ -10,7 +10,8 @@ namespace Weapons
     [DisallowMultipleComponent]
     public class WeaponProp : MonoBehaviour
     {
-        [Tooltip("R: the right fist; L: the left fist (bows, crossbows); M: a missile (arrow, bolt; +Y along the flight).")]
+        [Tooltip("R: the right fist; L: the left fist (bows, crossbows); M: a missile (arrow, bolt; +Y along the flight); " +
+                 "S: a shield (strapped to Socket_Shield: its face +Y, the forearm along +Z, its top -X).")]
         public string hand = "R";
         [Tooltip("A bow's string runs between these (none when they are the same).")]
         public Vector3 stringTop, stringBottom;

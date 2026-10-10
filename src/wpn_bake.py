@@ -1,9 +1,10 @@
 """Pack every weapon's construction UVs into one atlas and bake the three textures (see wpn_mats):
 
-    import wpn_bake; wpn_bake.bake_all()
+    import wpn_bake; wpn_bake.bake_all()                  # the weapons (WPN_Export -> T_Weapons*)
+    wpn_bake.bake_all(kit="shields")                      # the shields (WPN_Shields -> T_Shields*), an atlas of their own
 
 textures/T_Weapons.png (colour), T_Weapons_Glow.png (rune and crystal mask), T_Weapons_MS.png (metallic in R,
-smoothness in A). The painted source materials stay on the weapons (a later pass can be baked again without a
+smoothness in A); the same three for T_Shields. The painted source materials stay on the weapons (a later pass can be baked again without a
 rebuild); game_material() puts the colour atlas on them instead, for a look at the baked result.
 """
 import bpy, os
@@ -12,11 +13,12 @@ from wpn_common import fill_gutters
 import wpn_mats
 
 TEX_DIR = wpn_mats.TEX_DIR
-PASSES = (("color", "T_Weapons"), ("glow", "T_Weapons_Glow"), ("ms", "T_Weapons_MS"))
+KITS = {"weapons": ("WPN_Export", "T_Weapons"), "shields": ("WPN_Shields", "T_Shields")}   # collection, texture prefix
+PASSES = (("color", ""), ("glow", "_Glow"), ("ms", "_MS"))
 
 
-def objects():
-    return sorted(bpy.data.collections["WPN_Export"].objects, key=lambda o: o.name)
+def objects(kit="weapons"):
+    return sorted(bpy.data.collections[KITS[kit][0]].objects, key=lambda o: o.name)
 
 
 def uv_report(objs):
@@ -36,7 +38,7 @@ def uv_report(objs):
 
 def _select(objs):
     vl = bpy.context.view_layer
-    exp = bpy.data.collections["WPN_Export"]
+    exp = objs[0].users_collection[0]
     exp.hide_viewport = False
     for lc in vl.layer_collection.children:
         if lc.collection == exp:
@@ -62,9 +64,9 @@ def pack(objs, margin=0.003):
     bpy.ops.object.mode_set(mode='OBJECT')
 
 
-def bake_all(size=2048, samples=24, margin=0.003, passes=("color", "glow", "ms"), pack_uvs=True):
-    """Pack (unless pack_uvs is False: a later pass of the same layout) and bake the given passes."""
-    objs = objects()
+def bake_all(size=2048, samples=24, margin=0.003, passes=("color", "glow", "ms"), pack_uvs=True, kit="weapons"):
+    """Pack (unless pack_uvs is False: a later pass of the same layout) and bake the given passes of one kit."""
+    objs = objects(kit)
     missing = uv_report(objs)
     if missing:
         print("faces without UVs:", missing)
@@ -77,7 +79,8 @@ def bake_all(size=2048, samples=24, margin=0.003, passes=("color", "glow", "ms")
     scn.cycles.samples = samples
     mats = {m for o in objs for m in o.data.materials if m is not None}
     paths = {}
-    for pas, name in PASSES:
+    for pas, suffix in PASSES:
+        name = KITS[kit][1] + suffix
         if pas not in passes:
             continue
         img = bpy.data.images.get(name)

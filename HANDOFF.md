@@ -25,10 +25,18 @@ Unity); this file holds the agreements, the conventions that bite, the open issu
   colour pass (`pack_uvs=True`), never between passes.
 - **Rune inlays** sit on the surface they decorate through `sheet_runes` (reads the sheet's rows: a fuller's floor, a
   midrib's top) or `shaft_runes` / `ribbon`; a fixed height leaves them floating or buried as blades taper.
+- **Shields** bake with `kit="shields"` and export with `export_all(kit="shields")`; a weapons rebuild keeps the
+  shields' catalog row (`CAT_Shd_*`). The game's turn of a shield prop is `ItemsMenu.ShieldTurn` (0, 180, 0).
 - **Crossbow** points (`wpn_roster` crossbow rows) are mirrored in `Goblins/src/gob_crossbow.py` (`GRIP_R`, `NUT`,
   `STRING_FRONT`, `GROOVE`, `CHEEK`): change both together, then rebuild the clips.
 
 ## State (2026-10-04)
+
+2026-10-10: **shields** (Daniel: "expand the shields. not that many, but some variety would be nice, as well as magical
+versions"): `wpn_shields.py`, ten models on their own atlas (README "Shields"); ten items in MedievalSetting
+(stats, shops, chests, the foes that carry them, a riposte when an enchanted one catches a blow), checked in play mode.
+The heraldry is one design per model; the game's creatures hold a strapped shield edge on in their combat idle
+(POLISH.md).
 
 Done: 35 models, 20 enchanted copies, atlas + glow + metallic/smoothness, Unity setup and showcase, 54 items in the
 game (stats, prices, shops, loot, enchant effects, armour piercing), crossbow clips, glow checked in play mode.

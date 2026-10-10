@@ -7,7 +7,8 @@ namespace Weapons.EditorTools
     /// <summary>
     /// Import settings for Assets/Weapons: models import as plain meshes, Read/Write on (a goblin merges its props into
     /// one mesh at run time, and particle effects emit from a weapon's surface), no materials (WeaponsSetup assigns
-    /// them), the exported normals kept. T_Weapons is colour (sRGB); T_Weapons_Glow and T_Weapons_MS are data (linear).
+    /// them), the exported normals kept. T_Weapons and T_Shields are colour (sRGB); their _Glow and _MS maps are data
+    /// (linear).
     /// </summary>
     class WeaponsPostprocessor : AssetPostprocessor
     {
@@ -35,13 +36,14 @@ namespace Weapons.EditorTools
         {
             if (!Under(assetPath, "Textures")) return;
             var imp = (TextureImporter)assetImporter;
-            bool colour = assetPath.EndsWith("T_Weapons.png", StringComparison.OrdinalIgnoreCase);
+            bool colour = assetPath.EndsWith("T_Weapons.png", StringComparison.OrdinalIgnoreCase)
+                          || assetPath.EndsWith("T_Shields.png", StringComparison.OrdinalIgnoreCase);
             imp.sRGBTexture = colour;
             imp.alphaIsTransparency = false;
             imp.mipmapEnabled = true;
             imp.maxTextureSize = 2048;
             imp.textureCompression = TextureImporterCompression.CompressedHQ;
-            if (assetPath.EndsWith("T_Weapons.png", StringComparison.OrdinalIgnoreCase))
+            if (colour)
                 imp.alphaSource = TextureImporterAlphaSource.None;
         }
     }

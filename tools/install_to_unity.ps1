@@ -1,9 +1,9 @@
 <#
 Copies the weapon kit into a Unity project, under Assets/Weapons:
   unity/Weapons/Runtime, Editor    -> Assets/Weapons/Scripts/Runtime, Editor
-  export/Models/Wpn_*.fbx          -> Assets/Weapons/Models
-  export/weapons.json              -> Assets/Weapons/Models
-  export/Textures/T_Weapons*.png   -> Assets/Weapons/Textures
+  export/Models/Wpn_*.fbx, Shd_*   -> Assets/Weapons/Models
+  export/weapons.json, shields.json -> Assets/Weapons/Models
+  export/Textures/T_Weapons*.png, T_Shields*.png -> Assets/Weapons/Textures
 Files are overwritten in place; their .meta files (import settings, prefab references) are kept.
 Afterwards, in Unity: Tools > Weapons > Rebuild Prefabs and Showcase.
 
@@ -33,7 +33,10 @@ Copy-Into (Join-Path $root 'unity\Weapons\Runtime') '*.cs' (Join-Path $dst 'Scri
 Copy-Into (Join-Path $root 'unity\Weapons\Editor') '*.cs' (Join-Path $dst 'Scripts\Editor')
 if (-not $ScriptsOnly) {
     Copy-Into (Join-Path $root 'export\Models') 'Wpn_*.fbx' (Join-Path $dst 'Models')
+    Copy-Into (Join-Path $root 'export\Models') 'Shd_*.fbx' (Join-Path $dst 'Models')
     Copy-Into (Join-Path $root 'export') 'weapons.json' (Join-Path $dst 'Models')
+    Copy-Into (Join-Path $root 'export') 'shields.json' (Join-Path $dst 'Models')
     Copy-Into (Join-Path $root 'export\Textures') 'T_Weapons*.png' (Join-Path $dst 'Textures')
+    Copy-Into (Join-Path $root 'export\Textures') 'T_Shields*.png' (Join-Path $dst 'Textures')
 }
 Write-Host 'Done. In Unity: Tools > Weapons > Rebuild Prefabs and Showcase'
